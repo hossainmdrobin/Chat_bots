@@ -36,8 +36,7 @@ export default function ChatWindow() {
   }
 
   return (
-    <main className="">
-      {/* <div>{text}</div> */}
+    <main className="prose">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>
         {text}
       </ReactMarkdown>
