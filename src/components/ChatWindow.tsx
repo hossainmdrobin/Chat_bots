@@ -3,10 +3,10 @@
 export default function ChatWindow() {
   
   return (
-    <main>
+    <main className="">
       <form action="">
         <textarea
-        className='bg-gray-300'
+        className='bg-gray-300 rounded'
          name="chatarea" id="chatarea"></textarea>
          <button>Submit</button>
       </form>
