@@ -8,7 +8,7 @@ export const internetSearch = tool(
       maxResults,
       tavilyApiKey: process.env.TAVILY_API_KEY,
       includeRawContent,
-    //   topic,
+      // topic,
     });
     return await tavilySearch.invoke({ query });
   },

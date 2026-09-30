@@ -8,7 +8,8 @@ export async function POST(req: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
-
+      console.log(`\n🚀 Starting Deep Agent Task: "${prompt}"\n`);
+      console.log("-------------------------------------------------------------------");
       try {
         const eventStream = await agent.streamEvents(
           {
@@ -22,6 +23,25 @@ export async function POST(req: NextRequest) {
         );
 
         for await (const event of eventStream) {
+          // 1. DIRECT TOOL EXECUTION CHECK: Intercept when the agent executes write_todos
+          if (event.event === "on_tool_start" && event.name === "write_todos") {
+            console.log("\n📋 [AGENT GENERATED TODO PLAN]");
+            console.dir(event.data?.input, { depth: null, colors: true });
+            console.log("-------------------------------------------------------------------\n");
+          }
+          // 4. Capture when the model emits a tool call for write_todos
+          if (event.event == "on_chat_model_end" && event.data?.output?.tool_calls) {
+            const toolCalls = event.data.output.tool_calls
+            for (const call of toolCalls) {
+              if (call.name === "write_todos") {
+                console.log("\n📋 [AGENT GENERATED TODO PLAN]");
+                console.dir(call.args, { depth: null, colors: true });
+                console.log("-------------------------------------------------------------------\n");
+              }
+            }
+          }
+
+          // 5. Capture final response text tokens from the stream
           if (event.event === "on_chat_model_stream") {
             const content = event.data?.chunk?.content;
             if (typeof content === "string" && content) {
