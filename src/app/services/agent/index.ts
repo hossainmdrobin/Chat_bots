@@ -1,15 +1,23 @@
 import { createDeepAgent, StateBackend } from "deepagents";
 import { ChatGroq } from "@langchain/groq";
 import { internetSearch } from "./tools/websearch";
+import { writeTodosTool } from "./tools/todo";
+import { ChatGoogle } from "@langchain/google";
 // import { createCampaignPlan, getProduct } from "./tools/tools";
 // import { campaignPlanSchema } from "./schemas/campaign.schema";
 // import { toolStrategy, ToolStrategy } from "langchain";
 
-const model = new ChatGroq({
-  model: "openai/gpt-oss-120b",
-  temperature: 0,
-  apiKey: process.env.GROQ_API_KEY
-});
+// const model = new ChatGroq({
+//   model: "openai/gpt-oss-120b",
+//   temperature: 0,
+//   apiKey: process.env.GROQ_API_KEY
+// });
+
+const model = new ChatGoogle({
+  model:"gemini-3.8-flash",
+  temperature:0,
+  apiKey:process.env.GOOGLE_API_KEY
+})
 
 const researchSubagent = {
   name: "researcher",
@@ -34,6 +42,7 @@ export const agent = createDeepAgent({
   model,
   // responseFormat: ToolStrategy.fromSchema(campaignPlanSchema),
   backend: new StateBackend(), // Keeps memory clean in state
+  tools:[writeTodosTool],
   subagents: [researchSubagent, codeSubagent], // 🔑 Attach subagents here
   systemPrompt: `You are a Lead AI Architect managing specialized subagents.
 For complex tasks:

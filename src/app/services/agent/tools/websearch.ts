@@ -3,7 +3,7 @@ import { TavilySearch } from "@langchain/tavily";
 import { z } from "zod";
 
 export const internetSearch = tool(
-  async ({ query, maxResults = 5, topic = "general", includeRawContent = false }) => {
+  async ({ query, maxResults = 2, topic = "general", includeRawContent = false }) => {
     const tavilySearch = new TavilySearch({
       maxResults,
       tavilyApiKey: process.env.TAVILY_API_KEY,
