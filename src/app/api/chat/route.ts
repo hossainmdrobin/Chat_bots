@@ -32,6 +32,13 @@ export async function POST(req: NextRequest) {
             console.log("-------------------------------------------------------------------\n");
           }
 
+          // CAPUTER WHEN THE LOCALFILES ARE BEING WRITTEN
+          if (event.event === "on_tool_start" && event.name === "write_file") {
+            console.log("💾 [FILESYSTEM BACKEND -> OFFLOADING TO DISK]");
+            console.log(`Path: ${event.data?.input?.path}`);
+            console.log("---------------------------------------------------\n");
+          }
+
           // 2. CAPTURE TOOL EXECUTIONS INSIDE SUBAGENTS OR MAIN AGENT
           if (event.event === "on_tool_start" && event.name === "write_todos") {
             console.log("\n📋 [AGENT GENERATED TODO PLAN]");

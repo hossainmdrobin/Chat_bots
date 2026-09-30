@@ -1,8 +1,9 @@
-import { createDeepAgent, StateBackend } from "deepagents";
+import { createDeepAgent, FilesystemBackend, StateBackend } from "deepagents";
 import { ChatGroq } from "@langchain/groq";
 import { internetSearch } from "./tools/websearch";
 import { writeTodosTool } from "./tools/todo";
 import { ChatGoogle } from "@langchain/google";
+import path from "path";
 // import { createCampaignPlan, getProduct } from "./tools/tools";
 // import { campaignPlanSchema } from "./schemas/campaign.schema";
 // import { toolStrategy, ToolStrategy } from "langchain";
@@ -14,9 +15,9 @@ import { ChatGoogle } from "@langchain/google";
 // });
 
 const model = new ChatGoogle({
-  model:"gemini-3.8-flash",
-  temperature:0,
-  apiKey:process.env.GOOGLE_API_KEY
+  model: "gemini-1.5-flash",
+  temperature: 0,
+  apiKey: process.env.GOOGLE_API_KEY
 })
 
 const researchSubagent = {
@@ -37,19 +38,21 @@ Analyze requirements, apply software design patterns, and produce production-rea
   tools: [],
 };
 
-
+const workspacePath = path.join(process.cwd(), "agent_workspace");
 export const agent = createDeepAgent({
   model,
   // responseFormat: ToolStrategy.fromSchema(campaignPlanSchema),
-  backend: new StateBackend(), // Keeps memory clean in state
-  tools:[writeTodosTool],
+  // backend: new StateBackend(), // Keeps memory clean in state
+  backend: new FilesystemBackend({
+    rootDir: workspacePath,
+  }),
+  tools: [writeTodosTool],
   subagents: [researchSubagent, codeSubagent], // 🔑 Attach subagents here
-  systemPrompt: `You are a Lead AI Architect managing specialized subagents.
-For complex tasks:
-1. Always use 'write_todos' first to create an execution plan.
-2. Delegate deep research tasks to the 'researcher' subagent to keep your main conversation context clean.
-3. Delegate code architecture tasks to the 'coder' subagent.
-4. Synthesize the subagent reports into your final response.`,
+  systemPrompt: `You are an AI Engineer with a local virtual filesystem workspace at your disposal.
+OFFLOADING PROTOCOL:
+1. When you fetch large web search results or documentation, write the raw content to a file (e.g., 'research.txt') using 'write_file'.
+2. Use 'grep' or 'read_file' to inspect specific sections instead of pasting huge texts into conversation history.
+3. Keep active message context clean and concise.`,
 });
 
 export default agent;
