@@ -1,58 +1,52 @@
-import { createDeepAgent, FilesystemBackend, StateBackend } from "deepagents";
-import { ChatGroq } from "@langchain/groq";
+import { createDeepAgent, FilesystemBackend } from "deepagents";
 import { internetSearch } from "./tools/websearch";
 import { writeTodosTool } from "./tools/todo";
 import { ChatGoogle } from "@langchain/google";
 import path from "path";
-// import { createCampaignPlan, getProduct } from "./tools/tools";
-// import { campaignPlanSchema } from "./schemas/campaign.schema";
-// import { toolStrategy, ToolStrategy } from "langchain";
+import fs from "fs";
 
-// const model = new ChatGroq({
-//   model: "openai/gpt-oss-120b",
-//   temperature: 0,
-//   apiKey: process.env.GROQ_API_KEY
-// });
-
+// 1. Updated Google AI model string
 const model = new ChatGoogle({
-  model: "gemini-1.5-flash",
+  model: "gemini-3.1-flash-lite",
   temperature: 0,
-  apiKey: process.env.GOOGLE_API_KEY
-})
+  apiKey: process.env.GOOGLE_API_KEY,
+});
+
+// 2. Ensure agent_workspace exists on local disk
+const workspacePath = path.join(process.cwd(), "agent_workspace");
+if (!fs.existsSync(workspacePath)) {
+  fs.mkdirSync(workspacePath, { recursive: true });
+}
+
+// 3. Initialize workspace backend
+const backend = new FilesystemBackend({
+  rootDir: workspacePath,
+});
 
 const researchSubagent = {
   name: "researcher",
-  description: "Specialized subagent for deep web research, gathering facts, and summarizing external documentation.",
-  systemPrompt: `You are a Senior Technical Researcher. 
-Your goal is to gather detailed information using search tools, filter out irrelevant data, and return a clean, highly structured markdown summary. 
-Do not include intermediate scratchpad steps in your final answer.`,
-  tools: [internetSearch]
-}
+  description: "Specialized subagent for web research and documentation summarization.",
+  systemPrompt: `You are a Senior Technical Researcher. Gather detailed information using search tools and return a clean markdown summary.`,
+  tools: [internetSearch],
+};
 
 const codeSubagent = {
   name: "coder",
-  description:
-    "Specialized subagent for code analysis, architecture design, and generating clean TypeScript/Docker configurations.",
-  systemPrompt: `You are a Principal Software Architect. 
-Analyze requirements, apply software design patterns, and produce production-ready code snippets with concise architectural commentary.`,
+  description: "Specialized subagent for code architecture and TypeScript/Docker generation.",
+  systemPrompt: `You are a Principal Software Architect. Produce production-ready code directly.`,
   tools: [],
 };
 
-const workspacePath = path.join(process.cwd(), "agent_workspace");
 export const agent = createDeepAgent({
   model,
-  // responseFormat: ToolStrategy.fromSchema(campaignPlanSchema),
-  // backend: new StateBackend(), // Keeps memory clean in state
-  backend: new FilesystemBackend({
-    rootDir: workspacePath,
-  }),
-  tools: [writeTodosTool],
-  subagents: [researchSubagent, codeSubagent], // 🔑 Attach subagents here
-  systemPrompt: `You are an AI Engineer with a local virtual filesystem workspace at your disposal.
+  backend,
+  tools: [internetSearch, writeTodosTool],
+  subagents: [researchSubagent, codeSubagent],
+  systemPrompt: `You are an AI Architect with access to a virtual filesystem in your workspace.
+
 OFFLOADING PROTOCOL:
-1. When you fetch large web search results or documentation, write the raw content to a file (e.g., 'research.txt') using 'write_file'.
-2. Use 'grep' or 'read_file' to inspect specific sections instead of pasting huge texts into conversation history.
-3. Keep active message context clean and concise.`,
+1. Whenever you fetch web research or generate code/documentation, you MUST explicitly call the 'write_file' tool to save the content (e.g., 'write_file({ path: "research.txt", content: "..." })').
+2. Do not just output raw text in your response if you are instructed to create or save a file. Use 'write_file' FIRST.`,
 });
 
 export default agent;
