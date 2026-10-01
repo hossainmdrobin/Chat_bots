@@ -1,9 +1,17 @@
 import { NextRequest } from "next/server";
 import agent from "@/app/services/agent/index";
 import { HumanMessage } from "@langchain/core/messages";
+import { Chat, connectToDatabase, Message } from "@/lib/models";
 
 export async function POST(req: NextRequest) {
-  const { prompt } = await req.json();
+  const { prompt, thread_id, email } = await req.json();
+  connectToDatabase()
+  if (thread_id == 'new') {
+    const chat = await Chat.create({ user: email })
+    await Message.create({ chat: chat._id, role: 'human', message: prompt })
+  } else {
+    await Message.create({ chat: thread_id, role: 'human', message: prompt })
+  }
 
   const stream = new ReadableStream({
     async start(controller) {

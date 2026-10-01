@@ -2,8 +2,8 @@ import { Schema, model, models, type InferSchemaType, type Model } from 'mongoos
 
 const chatSchema = new Schema(
   {
-    user: {type:Schema.ObjectId,ref:"User", required:true},
-    title:{type:String}
+    user: { type: String },
+    title: { type: String }
   },
   { timestamps: true },
 );

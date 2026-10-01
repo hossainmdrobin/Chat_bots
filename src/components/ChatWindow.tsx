@@ -9,8 +9,12 @@ import MessageList from "./chat/MessageList";
 import Composer from "./chat/Composer";
 import ScrollToBottomButton from "./chat/ScrollToBottomButton";
 import type { Attachment } from "./chat/AttachmentChip";
+import { useSearchParams } from "next/navigation";
 
 export default function ChatWindow({ userEmail }: { userEmail: string }) {
+  const searchParams = useSearchParams();
+  const thread_id = searchParams.get("thread_id") || 'new';
+
   const [text, setText] = useState("")
   const [loading, setLoading] = useState(false)
   const [query, setQuery] = useState("")
@@ -36,6 +40,8 @@ export default function ChatWindow({ userEmail }: { userEmail: string }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         prompt: query,
+        thread_id,
+        email: userEmail
       }),
     });
 
