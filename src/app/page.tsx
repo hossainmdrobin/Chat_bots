@@ -20,7 +20,7 @@ export default async function Home() {
   return (
     <div className="flex h-dvh w-full overflow-hidden bg-canvas font-sans text-ink antialiased">
       <Sidebar userEmail={email} />
-      <ChatWindow />
+      <ChatWindow userEmail= {email} />
     </div>
   );
 }

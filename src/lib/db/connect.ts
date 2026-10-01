@@ -23,6 +23,7 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
   }
 
   cache.conn = await cache.promise;
+  console.log("MONGODB DATABASE CONNECTED SUCCESSFULLY")
 
   return cache.conn;
 }

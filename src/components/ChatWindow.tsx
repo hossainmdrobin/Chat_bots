@@ -10,7 +10,7 @@ import Composer from "./chat/Composer";
 import ScrollToBottomButton from "./chat/ScrollToBottomButton";
 import type { Attachment } from "./chat/AttachmentChip";
 
-export default function ChatWindow() {
+export default function ChatWindow({ userEmail }: { userEmail: string }) {
   const [text, setText] = useState("")
   const [loading, setLoading] = useState(false)
   const [query, setQuery] = useState("")
