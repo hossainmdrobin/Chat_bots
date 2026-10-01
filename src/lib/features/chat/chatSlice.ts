@@ -89,12 +89,12 @@ const chatSlice = createSlice({
         }
       }
     },
-    addPendingMessage: (state, action: PayloadAction<{ chatId: string }>) => {
-      const { chatId } = action.payload;
+    addPendingMessage: (state, action: PayloadAction<{ chatId: string; messageId?: string }>) => {
+      const { chatId, messageId } = action.payload;
       const chat = state.chats.find((c) => c.id === chatId);
       if (chat) {
         chat.messages.push({
-          id: `pending-${Date.now()}`,
+          id: messageId ?? `pending-${Date.now()}`,
           role: 'model',
           content: '',
           timestamp: '',
