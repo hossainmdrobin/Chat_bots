@@ -2,13 +2,15 @@ import { NextRequest } from "next/server";
 import agent from "@/app/services/agent/index";
 import { HumanMessage } from "@langchain/core/messages";
 import { Chat, connectToDatabase, Message } from "@/lib/models";
+import { generateChatTitle } from "@/lib/helpers/titleGenarator";
 
 export async function POST(req: NextRequest) {
   const { prompt, thread_id, email } = await req.json();
   await connectToDatabase()
   let chatId: string
   if (thread_id == 'new') {
-    const chat = await Chat.create({ user: email })
+    const title = await generateChatTitle(prompt)
+    const chat = await Chat.create({ user: email, title })
     chatId = chat._id.toString()
     await Message.create({ chat: chat._id, role: 'human', message: prompt })
   } else {
