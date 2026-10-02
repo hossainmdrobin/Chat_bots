@@ -1,11 +1,14 @@
 import { configureStore } from '@reduxjs/toolkit';
 import chatReducer from './features/chat/chatSlice';
+import { baseApi } from './api/baseApi';
 
 export const makeStore = () => {
   return configureStore({
     reducer: {
       chat: chatReducer,
+      [baseApi.reducerPath]: baseApi.reducer,
     },
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(baseApi.middleware),
   });
 };
 

@@ -1,15 +1,21 @@
 import { createDeepAgent, FilesystemBackend } from "deepagents";
 import { internetSearch } from "./tools/websearch";
 import { writeTodosTool } from "./tools/todo";
-import { ChatGoogle } from "@langchain/google";
 import path from "path";
 import fs from "fs";
 
 // 1. Updated Google AI model string
-const model = new ChatGoogle({
-  model: "gemini-3.1-flash-lite",
+// import { ChatOllama } from "@langchain/ollama";
+import { ChatGroq } from "@langchain/groq";
+
+// const model = new ChatOllama({
+//   model: "qwen3:1.7b",
+//   temperature: 0,
+// });
+const model = new ChatGroq({
+  model: "openai/gpt-oss-20b",
+  apiKey:process.env.GROQ_API_KEY,
   temperature: 0,
-  apiKey: process.env.GOOGLE_API_KEY,
 });
 
 // 2. Ensure agent_workspace exists on local disk

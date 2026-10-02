@@ -1,41 +1,54 @@
 'use client';
 
-import React from 'react';
-import { Menu, Plus, MessageSquare, HelpCircle, History, Settings } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Menu, Plus, MessageSquare, HelpCircle, History, Settings, LogOut } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '../lib/hooks';
-import {
-  createNewChat,
-  setActiveChatId,
-  deleteChat,
-  toggleSidebar,
-  setSidebarOpen
-} from '../lib/features/chat/chatSlice';
+import { useDeleteChatMutation, useGetChatsQuery } from '../lib/api/baseApi';
+import { toggleSidebar, setSidebarOpen } from '../lib/features/chat/chatSlice';
+import { rememberAccount } from '../lib/auth/remembered-account';
 import ChatHistoryList from './SidebarHistory';
+import AuthActionForm from './auth/AuthActionForm';
 
-export default function Sidebar() {
+interface SidebarProps {
+  userEmail: string;
+}
+
+export default function Sidebar({ userEmail }: SidebarProps) {
   const dispatch = useAppDispatch();
-  const chats = useAppSelector((state) => state.chat.chats);
-  const activeChatId = useAppSelector((state) => state.chat.activeChatId);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { data: chats = [], isLoading } = useGetChatsQuery();
+  const [deleteChat, { isLoading: isDeleting }] = useDeleteChatMutation();
   const isSidebarOpen = useAppSelector((state) => state.chat.isSidebarOpen);
 
+  const selectedId = searchParams.get('thread_id');
+
+  useEffect(() => {
+    rememberAccount(userEmail);
+  }, [userEmail]);
+
   const handleNewChat = () => {
-    dispatch(createNewChat());
-    // On mobile, auto close sidebar when creating new chat
+    router.replace(`${pathname}`);
     if (window.innerWidth <= 768) {
       dispatch(setSidebarOpen(false));
     }
   };
 
   const handleSelectChat = (id: string) => {
-    dispatch(setActiveChatId(id));
+    router.replace(`${pathname}?thread_id=${id}`);
     if (window.innerWidth <= 768) {
       dispatch(setSidebarOpen(false));
     }
   };
 
-  const handleDeleteChat = (e: React.MouseEvent, id: string) => {
+  const handleDeleteChat = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    dispatch(deleteChat(id));
+    await deleteChat(id);
+    if (selectedId === id) {
+      router.replace(`${pathname}`);
+    }
   };
 
   return (
@@ -80,14 +93,41 @@ export default function Sidebar() {
         {/* Recent Chats History */}
         <ChatHistoryList
           chats={chats}
-          activeChatId={activeChatId}
+          activeChatId={selectedId}
           isSidebarOpen={isSidebarOpen}
+          isLoading={isLoading}
+          isDeleting={isDeleting}
           onSelect={handleSelectChat}
           onDelete={handleDeleteChat}
         />
 
+        {/* Signed-in account */}
+        <div className="mt-auto border-t border-line p-2">
+          <div className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent/15 text-xs font-semibold text-accent uppercase">
+              {userEmail.charAt(0)}
+            </span>
+            <span
+              className={`truncate ${isSidebarOpen ? '' : 'sr-only'}`}
+              title={userEmail}
+            >
+              {userEmail}
+            </span>
+          </div>
+          <AuthActionForm
+            action="signout"
+            className="mt-1"
+            buttonClassName="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted transition hover:bg-elevated hover:text-ink disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <span className="flex items-center gap-2.5">
+              <LogOut size={16} className="shrink-0" />
+              <span className={isSidebarOpen ? '' : 'sr-only'}>Sign out</span>
+            </span>
+          </AuthActionForm>
+        </div>
+
         {/* Bottom Actions Navigation */}
-        <div className="mt-2 border-t border-line p-2">
+        <div className="border-t border-line p-2">
           <div className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted transition hover:bg-elevated hover:text-ink" title="Help">
             <HelpCircle size={16} className="shrink-0" />
             <span className={isSidebarOpen ? '' : 'sr-only'}>Help</span>
