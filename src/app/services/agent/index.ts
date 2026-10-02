@@ -13,7 +13,8 @@ import { ChatGroq } from "@langchain/groq";
 //   temperature: 0,
 // });
 const model = new ChatGroq({
-  model: "openai/gpt-oss-120b:cerebras",
+  model: "openai/gpt-oss-20b",
+  apiKey:process.env.GROQ_API_KEY,
   temperature: 0,
 });
 
