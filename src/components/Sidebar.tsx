@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { Menu, Plus, MessageSquare, HelpCircle, History, Settings, LogOut } from 'lucide-react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '../lib/hooks';
 import { useDeleteChatMutation, useGetChatsQuery } from '../lib/api/baseApi';
 import { toggleSidebar, setSidebarOpen } from '../lib/features/chat/chatSlice';
@@ -12,32 +12,29 @@ import AuthActionForm from './auth/AuthActionForm';
 
 interface SidebarProps {
   userEmail: string;
+  threadId: string | null;
 }
 
-export default function Sidebar({ userEmail }: SidebarProps) {
+export default function Sidebar({ userEmail, threadId }: SidebarProps) {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { data: chats = [], isLoading } = useGetChatsQuery();
   const [deleteChat, { isLoading: isDeleting }] = useDeleteChatMutation();
   const isSidebarOpen = useAppSelector((state) => state.chat.isSidebarOpen);
-
-  const selectedId = searchParams.get('thread_id');
 
   useEffect(() => {
     rememberAccount(userEmail);
   }, [userEmail]);
 
   const handleNewChat = () => {
-    router.replace(`${pathname}`);
+    router.push('/');
     if (window.innerWidth <= 768) {
       dispatch(setSidebarOpen(false));
     }
   };
 
   const handleSelectChat = (id: string) => {
-    router.replace(`${pathname}?thread_id=${id}`);
+    router.push(`/chat/${encodeURIComponent(id)}`);
     if (window.innerWidth <= 768) {
       dispatch(setSidebarOpen(false));
     }
@@ -46,8 +43,8 @@ export default function Sidebar({ userEmail }: SidebarProps) {
   const handleDeleteChat = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     await deleteChat(id);
-    if (selectedId === id) {
-      router.replace(`${pathname}`);
+    if (threadId === id) {
+      router.push('/');
     }
   };
 
@@ -93,7 +90,7 @@ export default function Sidebar({ userEmail }: SidebarProps) {
         {/* Recent Chats History */}
         <ChatHistoryList
           chats={chats}
-          activeChatId={selectedId}
+          activeChatId={threadId}
           isSidebarOpen={isSidebarOpen}
           isLoading={isLoading}
           isDeleting={isDeleting}

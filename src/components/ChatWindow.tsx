@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAppDispatch } from "@/lib/hooks";
 import { baseApi, useGetChatQuery } from "@/lib/api/baseApi";
 import { toggleSidebar } from "@/lib/features/chat/chatSlice";
@@ -12,11 +12,14 @@ import Composer from "./chat/Composer";
 import ScrollToBottomButton from "./chat/ScrollToBottomButton";
 import type { Attachment } from "./chat/AttachmentChip";
 
-export default function ChatWindow({ userEmail }: { userEmail: string }) {
+export default function ChatWindow({
+  userEmail,
+  threadId,
+}: {
+  userEmail: string;
+  threadId: string | null;
+}) {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const threadId = searchParams.get("thread_id");
 
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -80,15 +83,15 @@ export default function ChatWindow({ userEmail }: { userEmail: string }) {
     streamedRef.current = streamed;
 
     const createdChatId = res.headers.get("x-chat-id");
-    if (createdChatId && createdChatId !== threadId) {
-      router.replace(`${pathname}?thread_id=${createdChatId}`);
-    }
+    const activeThreadId = threadId ?? createdChatId;
 
     dispatch(baseApi.util.invalidateTags([{ type: "Chats", id: "LIST" }]));
-    if (threadId) {
-      dispatch(baseApi.util.invalidateTags([{ type: "Messages", id: threadId }]));
-    } else if (createdChatId) {
-      dispatch(baseApi.util.invalidateTags([{ type: "Messages", id: createdChatId }]));
+    if (activeThreadId) {
+      dispatch(baseApi.util.invalidateTags([{ type: "Messages", id: activeThreadId }]));
+    }
+
+    if (createdChatId && createdChatId !== threadId) {
+      router.push(`/chat/${encodeURIComponent(createdChatId)}`);
     }
   };
 
