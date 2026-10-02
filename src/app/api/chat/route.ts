@@ -5,11 +5,14 @@ import { Chat, connectToDatabase, Message } from "@/lib/models";
 
 export async function POST(req: NextRequest) {
   const { prompt, thread_id, email } = await req.json();
-  connectToDatabase()
+  await connectToDatabase()
+  let chatId: string
   if (thread_id == 'new') {
     const chat = await Chat.create({ user: email })
+    chatId = chat._id.toString()
     await Message.create({ chat: chat._id, role: 'human', message: prompt })
   } else {
+    chatId = thread_id
     await Message.create({ chat: thread_id, role: 'human', message: prompt })
   }
 
@@ -20,6 +23,7 @@ export async function POST(req: NextRequest) {
       console.log("-------------------------------------------------------------------");
 
       try {
+        let streamedText = ''
         const eventStream = await agent.streamEvents(
           {
             messages: [
@@ -59,9 +63,16 @@ export async function POST(req: NextRequest) {
             const content = event.data?.chunk?.content;
             if (typeof content === "string" && content) {
               controller.enqueue(encoder.encode(content));
+              streamedText += content;
             }
           }
         }
+
+        if (streamedText.trim()) {
+          await Message.create({ chat: chatId, role: 'ai', message: streamedText })
+        }
+        console.log("\n📝 [FULL STREAMED MESSAGE]\n" + streamedText);
+        console.log("-------------------------------------------------------------------\n");
       } catch (error) {
         console.error("Streaming error:", error);
       } finally {
