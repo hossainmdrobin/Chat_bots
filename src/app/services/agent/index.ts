@@ -5,10 +5,15 @@ import path from "path";
 import fs from "fs";
 
 // 1. Updated Google AI model string
-import { ChatOllama } from "@langchain/ollama";
+// import { ChatOllama } from "@langchain/ollama";
+import { ChatGroq } from "@langchain/groq";
 
-const model = new ChatOllama({
-  model: "qwen3:1.7b",
+// const model = new ChatOllama({
+//   model: "qwen3:1.7b",
+//   temperature: 0,
+// });
+const model = new ChatGroq({
+  model: "openai/gpt-oss-120b:cerebras",
   temperature: 0,
 });
 
