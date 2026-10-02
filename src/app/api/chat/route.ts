@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import agent from "@/app/services/agent/index";
-import { HumanMessage } from "@langchain/core/messages";
+import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { Chat, connectToDatabase, Message } from "@/lib/models";
 import { generateChatTitle } from "@/lib/helpers/titleGenarator";
 
@@ -18,6 +18,16 @@ export async function POST(req: NextRequest) {
     await Message.create({ chat: thread_id, role: 'human', message: prompt })
   }
 
+  let history: (HumanMessage | AIMessage)[] = []
+  if (thread_id && thread_id !== 'new') {
+    const past = await Message.find({ chat: thread_id }).sort({ createdAt: 1 }).lean()
+    history = past.map((m) =>
+      m.role === 'ai'
+        ? new AIMessage(m.message ?? '')
+        : new HumanMessage(m.message ?? '')
+    )
+  }
+
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
@@ -29,6 +39,7 @@ export async function POST(req: NextRequest) {
         const eventStream = await agent.streamEvents(
           {
             messages: [
+              ...history,
               new HumanMessage({
                 content: prompt || "Research Next.js 15 features and generate a Dockerfile.",
               }),
@@ -72,6 +83,7 @@ export async function POST(req: NextRequest) {
 
         if (streamedText.trim()) {
           await Message.create({ chat: chatId, role: 'ai', message: streamedText })
+          await Chat.updateOne({ _id: chatId }, { $set: { updatedAt: new Date() } })
         }
         console.log("\n📝 [FULL STREAMED MESSAGE]\n" + streamedText);
         console.log("-------------------------------------------------------------------\n");
@@ -87,6 +99,7 @@ export async function POST(req: NextRequest) {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "Transfer-Encoding": "chunked",
+      "x-chat-id": chatId,
     },
   });
 }

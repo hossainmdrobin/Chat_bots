@@ -2,14 +2,10 @@
 
 import React, { useEffect } from 'react';
 import { Menu, Plus, MessageSquare, HelpCircle, History, Settings, LogOut } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '../lib/hooks';
-import {
-  createNewChat,
-  setActiveChatId,
-  deleteChat,
-  toggleSidebar,
-  setSidebarOpen
-} from '../lib/features/chat/chatSlice';
+import { useDeleteChatMutation, useGetChatsQuery } from '../lib/api/baseApi';
+import { toggleSidebar, setSidebarOpen } from '../lib/features/chat/chatSlice';
 import { rememberAccount } from '../lib/auth/remembered-account';
 import ChatHistoryList from './SidebarHistory';
 import AuthActionForm from './auth/AuthActionForm';
@@ -20,32 +16,39 @@ interface SidebarProps {
 
 export default function Sidebar({ userEmail }: SidebarProps) {
   const dispatch = useAppDispatch();
-  const chats = useAppSelector((state) => state.chat.chats);
-  const activeChatId = useAppSelector((state) => state.chat.activeChatId);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { data: chats = [], isLoading } = useGetChatsQuery();
+  const [deleteChat, { isLoading: isDeleting }] = useDeleteChatMutation();
   const isSidebarOpen = useAppSelector((state) => state.chat.isSidebarOpen);
+
+  const selectedId = searchParams.get('thread_id');
 
   useEffect(() => {
     rememberAccount(userEmail);
   }, [userEmail]);
 
   const handleNewChat = () => {
-    dispatch(createNewChat());
-    // On mobile, auto close sidebar when creating new chat
+    router.replace(`${pathname}`);
     if (window.innerWidth <= 768) {
       dispatch(setSidebarOpen(false));
     }
   };
 
   const handleSelectChat = (id: string) => {
-    dispatch(setActiveChatId(id));
+    router.replace(`${pathname}?thread_id=${id}`);
     if (window.innerWidth <= 768) {
       dispatch(setSidebarOpen(false));
     }
   };
 
-  const handleDeleteChat = (e: React.MouseEvent, id: string) => {
+  const handleDeleteChat = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    dispatch(deleteChat(id));
+    await deleteChat(id);
+    if (selectedId === id) {
+      router.replace(`${pathname}`);
+    }
   };
 
   return (
@@ -90,8 +93,10 @@ export default function Sidebar({ userEmail }: SidebarProps) {
         {/* Recent Chats History */}
         <ChatHistoryList
           chats={chats}
-          activeChatId={activeChatId}
+          activeChatId={selectedId}
           isSidebarOpen={isSidebarOpen}
+          isLoading={isLoading}
+          isDeleting={isDeleting}
           onSelect={handleSelectChat}
           onDelete={handleDeleteChat}
         />
