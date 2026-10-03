@@ -5,17 +5,17 @@ import path from "path";
 import fs from "fs";
 
 // 1. Updated Google AI model string
-// import { ChatOllama } from "@langchain/ollama";
-// const model = new ChatOllama({
-//   model: "qwen3:1.7b",
-//   temperature: 0,
-// });
-import { ChatGroq } from "@langchain/groq";
-const model = new ChatGroq({
-  model: "openai/gpt-oss-20b",
-  apiKey:process.env.GROQ_API_KEY,
+import { ChatOllama } from "@langchain/ollama";
+const model = new ChatOllama({
+  model: "qwen3:1.7b",
   temperature: 0,
 });
+// import { ChatGroq } from "@langchain/groq";
+// const model = new ChatGroq({
+//   model: "openai/gpt-oss-20b",
+//   apiKey:process.env.GROQ_API_KEY,
+//   temperature: 0,
+// });
 
 // 2. Ensure agent_workspace exists on local disk
 const workspacePath = path.join(process.cwd(), "agent_workspace");
